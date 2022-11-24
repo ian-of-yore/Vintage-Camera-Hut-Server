@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -34,6 +34,29 @@ async function run() {
         app.post('/addproduct', async (req, res) => {
             const body = req.body;
             const result = await productsCollection.insertOne(body);
+            res.send(result);
+        })
+
+        // sending added products by the seller to the client side
+        app.get('/my-products', async (req, res) => {
+            const email = req.query.email;
+            const query = { sellerEmail: email };
+            const cursor = productsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // updating the advertisement condition for the seller
+        app.put('/my-products/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    status: 'Advertised'
+                }
+            }
+            const result = await productsCollection.updateOne(filter, updateDoc, options);
             res.send(result);
         })
 
