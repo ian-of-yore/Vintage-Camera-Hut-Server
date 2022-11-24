@@ -87,7 +87,7 @@ async function run() {
         })
 
         // sending all the users info to the client 
-        app.get('/buyers', async (req, res) => {
+        app.get('/sellers', async (req, res) => {
             const query = { role: "Seller" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
@@ -95,7 +95,7 @@ async function run() {
         })
 
         // sending all the sellers info to the client side
-        app.get('/sellers', async (req, res) => {
+        app.get('/buyers', async (req, res) => {
             const query = { role: "Buyer" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
