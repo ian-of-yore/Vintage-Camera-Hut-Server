@@ -60,6 +60,48 @@ async function run() {
             res.send(result);
         })
 
+        // sending all the advertised product to the client side
+        app.get('/advertised-products', async (req, res) => {
+            const query = { status: "Advertised" };
+            const cursor = productsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // delete product from seller account
+        app.delete('/my-products/:id', async (req, res) => {
+            const id = req.params.id;
+            console.log(id)
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // Sending data to the client side based on product category
+        app.get('/category/:id', async (req, res) => {
+            const categoryId = req.params.id;
+            const query = { category: categoryId };
+            const cursor = productsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // sending all the users info to the client 
+        app.get('/buyers', async (req, res) => {
+            const query = { role: "Seller" };
+            const cursor = usersCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // sending all the sellers info to the client side
+        app.get('/sellers', async (req, res) => {
+            const query = { role: "Buyer" };
+            const cursor = usersCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
     }
     finally {
 
