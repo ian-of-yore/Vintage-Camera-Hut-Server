@@ -57,6 +57,31 @@ async function run() {
             res.status(403).send({ accessToken: '' })
         })
 
+        // A middleware to verifyAdmin
+        const verifyAdmin = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user.role !== 'Admin') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+            next();
+        }
+
+        // A middleware to verifySeller
+        const verifySeller = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user.role !== 'Seller') {
+                return res.status(403).send({ message: 'Forbidden Access' });
+            }
+
+            next();
+        }
+
         // saving the registered user data to the database
         app.post('/users', async (req, res) => {
             const body = req.body;
@@ -65,14 +90,14 @@ async function run() {
         })
 
         // add new products to the DB when seller adds a product on the client side
-        app.post('/addproduct', verifyJWT, async (req, res) => {
+        app.post('/addproduct', verifyJWT, verifySeller, async (req, res) => {
             const body = req.body;
             const result = await productsCollection.insertOne(body);
             res.send(result);
         })
 
         // sending added products by the seller to the client side
-        app.get('/my-products', verifyJWT, async (req, res) => {
+        app.get('/my-products', verifyJWT, verifySeller, async (req, res) => {
             const email = req.query.email;
             const query = { sellerEmail: email };
             const cursor = productsCollection.find(query);
@@ -120,16 +145,16 @@ async function run() {
             res.send(result);
         })
 
-        // sending all the users info to the client 
-        app.get('/sellers', verifyJWT, async (req, res) => {
+        // sending all the sellers info to the client side
+        app.get('/sellers', verifyJWT, verifyAdmin, async (req, res) => {
             const query = { role: "Seller" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
 
-        // sending all the sellers info to the client side
-        app.get('/buyers', verifyJWT, async (req, res) => {
+        // sending all the buyers info to the client side
+        app.get('/buyers', verifyJWT, verifyAdmin, async (req, res) => {
             const query = { role: "Buyer" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
