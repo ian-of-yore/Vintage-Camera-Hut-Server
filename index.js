@@ -22,6 +22,7 @@ async function run() {
         const database = client.db('CameraHut');
         const usersCollection = database.collection('users');
         const productsCollection = database.collection('products');
+        const ordersCollection = database.collection('orders');
 
         // saving the registered user data to the database
         app.post('/users', async (req, res) => {
@@ -99,6 +100,13 @@ async function run() {
             const query = { role: "Buyer" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // taking orders from the client and saving it to the database
+        app.post('/orders', async (req, res) => {
+            const order = req.body;
+            const result = await ordersCollection.insertOne(order);
             res.send(result);
         })
 
