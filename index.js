@@ -82,6 +82,19 @@ async function run() {
             next();
         }
 
+        // A middleware to verifyBuyer
+        const verifyBuyer = async (req, res, next) => {
+            const decodedEmail = req.decoded.email;
+            const query = { email: decodedEmail };
+            const user = await usersCollection.findOne(query);
+
+            if (user.role !== 'Buyer') {
+                return res.status(403).send({ message: 'Forbidden Access' })
+            }
+
+            next();
+        }
+
         // saving the registered user data to the database
         app.post('/users', async (req, res) => {
             const body = req.body;
@@ -106,7 +119,7 @@ async function run() {
         })
 
         // updating the advertisement condition for the seller
-        app.put('/my-products/:id', verifyJWT, async (req, res) => {
+        app.put('/my-products/:id', verifyJWT, verifySeller, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const options = { upsert: true };
@@ -162,14 +175,14 @@ async function run() {
         })
 
         // taking orders from the client and saving it to the database
-        app.post('/orders', verifyJWT, async (req, res) => {
+        app.post('/orders', verifyJWT, verifyBuyer, async (req, res) => {
             const order = req.body;
             const result = await ordersCollection.insertOne(order);
             res.send(result);
         })
 
         // my orders api based on logged in users email address
-        app.get('/my-orders', verifyJWT, async (req, res) => {
+        app.get('/my-orders', verifyJWT, verifyBuyer, async (req, res) => {
             const email = req.query.email;
             const query = { buyerEmail: email };
             const cursor = ordersCollection.find(query);
@@ -182,7 +195,7 @@ async function run() {
             const email = req.params.email;
             const query = { email: email };
             const user = await usersCollection.findOne(query);
-            res.send({ isBuyer: user?.email === 'Buyer' });
+            res.send({ isBuyer: user?.role === 'Buyer' });
         })
 
         // sending the confirmation if an user is admin or not
