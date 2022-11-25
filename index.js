@@ -2,9 +2,10 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { query } = require('express');
 const app = express();
 const port = process.env.PORT || 5000;
-
+const jwt = require('jsonwebtoken');
 
 app.use(cors());
 app.use(express.json());
@@ -12,6 +13,25 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('Server Running')
 })
+
+
+function verifyJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized Access');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'Forbidden Content' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+}
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.mmmt3qa.mongodb.net/?retryWrites=true&w=majority`;
@@ -24,6 +44,19 @@ async function run() {
         const productsCollection = database.collection('products');
         const ordersCollection = database.collection('orders');
 
+        // Generating JWT Token for the user
+        app.get('/jwt', async (req, res) => {
+            const email = req.query.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+
+            if (user) {
+                const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '7d' });
+                return res.send({ accessToken: token });
+            }
+            res.status(403).send({ accessToken: '' })
+        })
+
         // saving the registered user data to the database
         app.post('/users', async (req, res) => {
             const body = req.body;
@@ -32,14 +65,14 @@ async function run() {
         })
 
         // add new products to the DB when seller adds a product on the client side
-        app.post('/addproduct', async (req, res) => {
+        app.post('/addproduct', verifyJWT, async (req, res) => {
             const body = req.body;
             const result = await productsCollection.insertOne(body);
             res.send(result);
         })
 
         // sending added products by the seller to the client side
-        app.get('/my-products', async (req, res) => {
+        app.get('/my-products', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const query = { sellerEmail: email };
             const cursor = productsCollection.find(query);
@@ -48,7 +81,7 @@ async function run() {
         })
 
         // updating the advertisement condition for the seller
-        app.put('/my-products/:id', async (req, res) => {
+        app.put('/my-products/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             const filter = { _id: ObjectId(id) };
             const options = { upsert: true };
@@ -70,7 +103,7 @@ async function run() {
         })
 
         // delete product from seller account
-        app.delete('/my-products/:id', async (req, res) => {
+        app.delete('/my-products/:id', verifyJWT, async (req, res) => {
             const id = req.params.id;
             console.log(id)
             const query = { _id: ObjectId(id) };
@@ -88,7 +121,7 @@ async function run() {
         })
 
         // sending all the users info to the client 
-        app.get('/sellers', async (req, res) => {
+        app.get('/sellers', verifyJWT, async (req, res) => {
             const query = { role: "Seller" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
@@ -96,7 +129,7 @@ async function run() {
         })
 
         // sending all the sellers info to the client side
-        app.get('/buyers', async (req, res) => {
+        app.get('/buyers', verifyJWT, async (req, res) => {
             const query = { role: "Buyer" };
             const cursor = usersCollection.find(query);
             const result = await cursor.toArray();
@@ -104,10 +137,19 @@ async function run() {
         })
 
         // taking orders from the client and saving it to the database
-        app.post('/orders', async (req, res) => {
+        app.post('/orders', verifyJWT, async (req, res) => {
             const order = req.body;
             const result = await ordersCollection.insertOne(order);
             res.send(result);
+        })
+
+        // my orders api based on logged in users email address
+        app.get('/my-orders', verifyJWT, async (req, res) => {
+            const email = req.query.email;
+            const query = { buyerEmail: email };
+            const cursor = ordersCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result)
         })
 
     }
