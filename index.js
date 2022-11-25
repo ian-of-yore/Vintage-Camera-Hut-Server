@@ -180,6 +180,14 @@ async function run() {
             res.send(result);
         })
 
+        // api for checking if a seller is verified or not, this api is available for the sellers
+        app.get('/sellers/verified/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const seller = await usersCollection.findOne(query);
+            res.send({ isVerified: seller?.status === 'Verified' })
+        })
+
         // sending all the buyers info to the client side
         app.get('/buyers', verifyJWT, verifyAdmin, async (req, res) => {
             const query = { role: "Buyer" };
