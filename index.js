@@ -180,7 +180,7 @@ async function run() {
             res.send(result);
         })
 
-        // api for checking if a seller is verified or not, this api is available for the sellers
+        // api for checking if a seller is verified or not, this api is available for everyone so no JWT implemented
         app.get('/sellers/verified/:email', async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
