@@ -177,6 +177,30 @@ async function run() {
             res.send(result)
         })
 
+        // sending the confirmation if an user is buyer or not
+        app.get('/users/buyer/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isBuyer: user?.email === 'Buyer' });
+        })
+
+        // sending the confirmation if an user is admin or not
+        app.get('/users/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isAdmin: user?.role === 'Admin' });
+        });
+
+        // sending the confirmation if an user is seller or not
+        app.get('/users/seller/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const user = await usersCollection.findOne(query);
+            res.send({ isSeller: user?.role === 'Seller' });
+        })
+
     }
     finally {
 
