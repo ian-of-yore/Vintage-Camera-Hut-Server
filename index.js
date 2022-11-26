@@ -180,6 +180,22 @@ async function run() {
             res.send(result);
         })
 
+        // api for deleting a seller from the admin account
+        app.delete('/sellers/delete/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // api for deleting a buyer from the admin account
+        app.delete('/buyers/delete/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await usersCollection.deleteOne(query);
+            res.send(result);
+        })
+
         // api for checking if a seller is verified or not, this api is available for everyone so no JWT implemented
         app.get('/sellers/verified/:email', async (req, res) => {
             const email = req.params.email;
