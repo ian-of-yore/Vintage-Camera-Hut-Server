@@ -43,6 +43,7 @@ async function run() {
         const usersCollection = database.collection('users');
         const productsCollection = database.collection('products');
         const ordersCollection = database.collection('orders');
+        const reportedProductsCollection = database.collection('reportedProducts');
 
         // Generating JWT Token for the user
         app.get('/jwt', async (req, res) => {
@@ -196,6 +197,7 @@ async function run() {
             res.send(result);
         })
 
+
         // api for checking if a seller is verified or not, this api is available for everyone so no JWT implemented
         app.get('/sellers/verified/:email', async (req, res) => {
             const email = req.params.email;
@@ -250,6 +252,21 @@ async function run() {
             const query = { email: email };
             const user = await usersCollection.findOne(query);
             res.send({ isSeller: user?.role === 'Seller' });
+        })
+
+        // api to report an item to the admin
+        app.post('/products/reported', verifyJWT, verifyBuyer, async (req, res) => {
+            const reportedProduct = req.body;
+            const result = await reportedProductsCollection.insertOne(reportedProduct);
+            res.send(result);
+        })
+
+        // api for showing the reported products to the admin account
+        app.get('/products/reported', verifyJWT, verifyAdmin, async (req, res) => {
+            const query = {};
+            const cursor = reportedProductsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
         })
 
     }
