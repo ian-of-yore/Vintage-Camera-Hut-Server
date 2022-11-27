@@ -6,6 +6,8 @@ const { query, application } = require('express');
 const app = express();
 const port = process.env.PORT || 5000;
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
 
 app.use(cors());
 app.use(express.json());
@@ -44,6 +46,7 @@ async function run() {
         const productsCollection = database.collection('products');
         const ordersCollection = database.collection('orders');
         const reportedProductsCollection = database.collection('reportedProducts');
+        const paymentsCollection = database.collection('payments');
 
         // Generating JWT Token for the user
         app.get('/jwt', async (req, res) => {
@@ -147,6 +150,14 @@ async function run() {
             console.log(id)
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
+            res.send(result);
+        })
+
+        // sending data of a specific product based on productId to the client side
+        app.get('/products/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.findOne(query);
             res.send(result);
         })
 
@@ -266,6 +277,43 @@ async function run() {
             const query = {};
             const cursor = reportedProductsCollection.find(query);
             const result = await cursor.toArray();
+            res.send(result);
+        })
+
+        // string user verification
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const productPayment = req.body;
+            const price = productPayment.price;
+            const amount = price * 100;
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                currency: 'usd',
+                amount: amount,
+                "payment_method_types": [
+                    "card"
+                ]
+            });
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+        // saving payment informations
+        app.post('/payments', verifyJWT, verifyBuyer, async (req, res) => {
+            const payment = req.body;
+            const result = await paymentsCollection.insertOne(payment);
+            const id = payment.productId;
+            const filterProduct = { _id: ObjectId(id) };
+            const filterOrder = { productID: id };
+
+            const options = { upsert: true };
+            const updateDoc = {
+                $set: {
+                    availability: 'sold'
+                }
+            }
+            const updateProduct = await productsCollection.updateOne(filterProduct, updateDoc, options);
+            const updateOrder = await ordersCollection.updateOne(filterOrder, updateDoc, options);
             res.send(result);
         })
 
