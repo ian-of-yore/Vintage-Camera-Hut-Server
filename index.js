@@ -241,6 +241,7 @@ async function run() {
             res.send(result)
         })
 
+
         // sending the confirmation if an user is buyer or not
         app.get('/users/buyer/:email', async (req, res) => {
             const email = req.params.email;
@@ -273,12 +274,13 @@ async function run() {
         })
 
         // api for showing the reported products to the admin account
-        app.get('/products/reported', verifyJWT, verifyAdmin, async (req, res) => {
-            const query = {};
-            const cursor = reportedProductsCollection.find(query);
-            const result = await cursor.toArray();
-            res.send(result);
-        })
+        // app.get('/reportedItems', async (req, res) => {
+        //     const query = {};
+        //     const cursor = reportedProductsCollection.find(query);
+        //     const result = cursor.toArray();
+        //     res.send(result);
+        // })
+
 
         // string user verification
         app.post('/create-payment-intent', verifyJWT, async (req, res) => {
@@ -303,17 +305,15 @@ async function run() {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
             const id = payment.productId;
-            const filterProduct = { _id: ObjectId(id) };
             const filterOrder = { productID: id };
 
-            const options = { upsert: true };
+            // const options = { upsert: true };
             const updateDoc = {
                 $set: {
                     availability: 'sold'
                 }
             }
-            const updateProduct = await productsCollection.updateOne(filterProduct, updateDoc, options);
-            const updateOrder = await ordersCollection.updateOne(filterOrder, updateDoc, options);
+            const updateOrder = await ordersCollection.updateOne(filterOrder, updateDoc);
             res.send(result);
         })
 
