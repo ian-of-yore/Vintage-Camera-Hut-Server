@@ -47,6 +47,7 @@ async function run() {
         const ordersCollection = database.collection('orders');
         const reportedProductsCollection = database.collection('reportedProducts');
         const paymentsCollection = database.collection('payments');
+        const wishlistCollection = database.collection('wishlist');
 
         // Generating JWT Token for the user
         app.get('/jwt', async (req, res) => {
@@ -139,7 +140,7 @@ async function run() {
         // sending all the advertised product to the client side
         app.get('/advertised-products', async (req, res) => {
             const query = { status: "Advertised" };
-            const cursor = productsCollection.find(query);
+            const cursor = productsCollection.find(query).limit(6);
             const result = await cursor.toArray();
             res.send(result);
         })
@@ -274,9 +275,26 @@ async function run() {
         })
 
         // api for showing the reported products to the admin account
-        // app.get('/reportedItems', async (req, res) => {
-        //     const query = {};
-        //     const cursor = reportedProductsCollection.find(query);
+        app.get('/products/reported', async (req, res) => {
+            const query = {};
+            const cursor = reportedProductsCollection.find(query);
+            const result = await cursor.toArray();
+            res.send(result);
+        })
+
+
+        // add wishlist products to database
+        app.post('/products/wishlist', verifyJWT, verifyBuyer, async (req, res) => {
+            const wishlistProduct = req.body;
+            const result = await wishlistCollection.insertOne(wishlistProduct);
+            res.send(result);
+        })
+
+        // // api for showing the products of on the wishlist based on the buyer email
+        // app.get('/products/wishlist', async (req, res) => {
+        //     const email = req.query.email;
+        //     const query = { userEmail: email };
+        //     const cursor = wishlistCollection.find(query);
         //     const result = cursor.toArray();
         //     res.send(result);
         // })
@@ -304,16 +322,16 @@ async function run() {
         app.post('/payments', verifyJWT, verifyBuyer, async (req, res) => {
             const payment = req.body;
             const result = await paymentsCollection.insertOne(payment);
-            const id = payment.productId;
-            const filterOrder = { productID: id };
+            // const id = payment.productId;
+            // const filterOrder = { productID: id };
 
-            // const options = { upsert: true };
-            const updateDoc = {
-                $set: {
-                    availability: 'sold'
-                }
-            }
-            const updateOrder = await ordersCollection.updateOne(filterOrder, updateDoc);
+            // // const options = { upsert: true };
+            // const updateDoc = {
+            //     $set: {
+            //         availability: 'sold'
+            //     }
+            // }
+            // const updateOrder = await ordersCollection.updateOne(filterOrder, updateDoc);
             res.send(result);
         })
 
