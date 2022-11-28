@@ -274,13 +274,13 @@ async function run() {
             res.send(result);
         })
 
-        // api for showing the reported products to the admin account
-        app.get('/products/reported', async (req, res) => {
-            const query = {};
-            const cursor = reportedProductsCollection.find(query);
-            const result = await cursor.toArray();
-            res.send(result);
-        })
+        // // api for showing the reported products to the admin account
+        // app.get('/products/reported', verifyJWT, verifyAdmin, async (req, res) => {
+        //     const query = {};
+        //     const cursor = reportedProductsCollection.find(query);
+        //     const result = await cursor.toArray();
+        //     res.send(result);
+        // })
 
 
         // add wishlist products to database
