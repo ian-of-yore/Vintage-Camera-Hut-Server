@@ -148,7 +148,7 @@ async function run() {
         // sending all the advertised product to the client side
         app.get('/advertised-products', async (req, res) => {
             const query = { status: "Advertised" };
-            const cursor = productsCollection.find(query).limit(6);
+            const cursor = productsCollection.find(query);
             const result = await cursor.toArray();
             res.send(result);
         })
